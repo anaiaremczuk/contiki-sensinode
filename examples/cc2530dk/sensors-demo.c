@@ -98,8 +98,8 @@ PROCESS_THREAD(buttons_test_process, ev, data)
     /* If we woke up after a sensor event, inform what happened */
     sensor = (struct sensors_sensor *)data;
     if(sensor == &button_sensor) {
-      PRINTF("Button Press\n");
-      leds_toggle(LEDS_GREEN);
+      PRINTF("Button Press - LED Yellow!\n");
+      leds_toggle(LEDS_YELLOW);
     }
   }
 
@@ -153,7 +153,7 @@ PROCESS_THREAD(sensors_test_process, ev, data)
        */
       rv = sensor->value(ADC_SENSOR_TYPE_TEMP);
       if(rv != -1) {
-        sane = 25 + ((rv - 1480) / 4.5);
+        sane = 19 + ((rv - 1660) / 4.5);
         dec = sane;
         frac = sane - dec;
         PRINTF("  Temp=%d.%02u C (%d)\n", dec, (unsigned int)(frac*100), rv);
