@@ -124,6 +124,11 @@
 #define BUTTON_SENSOR_CONF_ON   1  /* Buttons */
 #endif
 
+#define BMP_SENSOR_CONF_ON   1
+
+#ifndef BMP_SENSOR_CONF_ON
+#define BMP_SENSOR_CONF_ON  0
+#endif
 
 /* B2 on the cc2531 USB stick can be a reset button or a general-purpose one */
 #ifndef CC2531_CONF_B2_REBOOTS

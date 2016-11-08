@@ -130,7 +130,7 @@ print_local_addresses(void)
   }
 }
 
-PROCESS_THREAD(udp_client_process, ev, data)
+PROCESS_THREAD(l, ev, data)
 {
   static struct etimer et;
   uip_ipaddr_t ipaddr;

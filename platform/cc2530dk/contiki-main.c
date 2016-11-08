@@ -15,6 +15,7 @@
 #include "dev/lpm.h"
 #include "dev/button-sensor.h"
 #include "dev/adc-sensor.h"
+#include "dev/bmp280-sensor.h"
 #include "dev/leds-arch.h"
 #include "net/rime.h"
 #include "net/netstack.h"
@@ -240,6 +241,10 @@ main(void) CC_NON_BANKED
   BUTTON_SENSOR_ACTIVATE();
 
   ADC_SENSOR_ACTIVATE();
+#endif
+
+#if BMP_SENSOR_ON
+  BMP_SENSOR_ACTIVATE();
 #endif
 
 #if UIP_CONF_IPV6

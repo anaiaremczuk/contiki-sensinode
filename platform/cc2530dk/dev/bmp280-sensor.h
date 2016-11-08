@@ -31,31 +31,42 @@
 
 /**
  * \file
- *         Data structures for SmartRF05EB sensing elements
+ *         Header file for BMP280 sensor on the PPSEAI11 kit.
+ *
+ *         Sensors will be off by default, unless turned on explicitly
+ *         in contiki-conf.h
  *
  * \author
  *         George Oikonomou - <oikonomou@users.sourceforge.net>
  */
 
-#include "dev/button-sensor.h"
-#include "dev/adc-sensor.h"
-#include "dev/bmp280-sensor.h"
-#include "sys/energest.h"
+#ifndef __BMP_SENSOR_H__
+#define __BMP_SENSOR_H__
 
-const struct sensors_sensor *sensors[] = {
+#include "cc253x.h"
+#include "contiki-conf.h"
+#include "lib/sensors.h"
+
+/* BMP Sensor Types */
+#define BMP_SENSOR "BMP"
+
+#ifdef BMP_SENSOR_CONF_ON
+#define BMP_SENSOR_ON BMP_SENSOR_CONF_ON
+#endif /* BMP_SENSOR_CONF_ON */
+
+
 #if BMP_SENSOR_ON
-  &bmp_sensor,
-#endif
-#if ADC_SENSOR_ON
-  &adc_sensor,
-#endif
-#if BUTTON_SENSOR_ON
-  &button_1_sensor,
-#if MODEL_CC2531
-  &button_2_sensor,
-#endif
-#endif
-  0
-};
+extern const struct sensors_sensor bmp_sensor;
+#define   BMP_SENSOR_ACTIVATE() bmp_sensor.configure(SENSORS_ACTIVE, 1)
+#else
+#define   BMP_SENSOR_ACTIVATE()
+#endif /* BMP_SENSOR_ON */
 
-unsigned char sensors_flags[(sizeof(sensors) / sizeof(struct sensors_sensor *))];
+#define BMP_SENSOR_TYPE_TEMP    0
+#define BMP_SENSOR_TYPE_PRESS_hPa   1
+#define BMP_SENSOR_TYPE_LAST_READ_PRESS_Pa_MSB 2
+#define BMP_SENSOR_TYPE_LAST_READ_PRESS_Pa_LSB 3
+
+#define SDO_MASK  0x80
+
+#endif /* __BMP_SENSOR_H__ */

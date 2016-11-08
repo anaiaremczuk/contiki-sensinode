@@ -92,6 +92,7 @@ value(int type)
 	  break;
 #if TEMP_SENSOR_ON
   case ADC_SENSOR_TYPE_TEMP:
+	  ATEST = 1;
 	  command |= ADCCON3_ECH3 | ADCCON3_ECH2 | ADCCON3_ECH1;
 	  break;
 #endif
@@ -122,6 +123,9 @@ value(int type)
   ADCIF = 0;
 
   reading = ADCL;
+#if TEMP_SENSOR_ON
+	  ATEST = 0;
+#endif
   reading |= (((uint8_t) ADCH) << 8);
   /* 12-bit decimation rate: 4 LS bits are noise */
   if(reading<0)
@@ -188,8 +192,8 @@ configure(int type, int value)
 #endif
 #if TEMP_SENSOR_ON
 		/* Connect temperature sensor to the SoC */
-		ATEST = 1;
 		TESTREG0 = 1;
+		//ATEST = 1; //After configuring ATEST, P0 pins readings won't work anymore
 #endif
 		APCFG = analog_cfg;
 		break;
