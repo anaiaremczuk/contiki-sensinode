@@ -30,6 +30,7 @@
 #include "contiki.h"
 #include "contiki-lib.h"
 #include "contiki-net.h"
+#include "cc2530-rf.h"
 
 #include <string.h>
 #include "dev/leds.h"
@@ -39,7 +40,7 @@
 #define DEBUG DEBUG_PRINT
 #include "net/uip-debug.h"
 
-#define SEND_INTERVAL		10 * CLOCK_SECOND
+#define SEND_INTERVAL		2 * CLOCK_SECOND
 #define MAX_PAYLOAD_LEN		40
 
 #define UIP_IP_BUF   ((struct uip_ip_hdr *)&uip_buf[UIP_LLH_LEN])
@@ -59,6 +60,10 @@ static struct uip_udp_conn *g_conn;
 #define LED_GET_STATE (0x7B)
 #define LED_STATE (0x7C)
 
+static uint8_t power = 0xF5;
+static int16_t results[16];
+static int index = 0;
+
 /*---------------------------------------------------------------------------*/
 PROCESS(udp_client_process, "UDP client process");
 #if BUTTON_SENSOR_ON
@@ -71,6 +76,10 @@ AUTOSTART_PROCESSES(&udp_client_process);
 static void tcpip_handler ( void )
 {
 	char i=0;
+	int16_t rssi;
+	int16_t lqi;
+	int8_t rssi_get;
+	int8_t lqi_get;
 	#define SEND_ECHO (0xBA)
 	if( uip_newdata ()) // verifica se novos dados foram recebidos
 	{
@@ -110,14 +119,54 @@ static void tcpip_handler ( void )
 			{
 				PRINTF("0x%02X" ,dados [i]);
 			}
+			PRINTF("\n 	~Received (Power of toggle request)~");
+			rssi_get= ((int16_t)dados[2]<<8)|dados[3];
+			PRINTF("\n Signal Strength: %i", rssi_get);
+			lqi_get= ((int16_t)dados[4]<<8)|dados[5];
+			PRINTF("\n Link Quality: %i", lqi_get);
+
+			if(power > 0x05){
+				results[index] = rssi_get;
+				PRINTF("\n Index: %i Power: %i", index, power);
+				power = power - 0x10;
+				index = index + 1;
+			}
+			else{
+				for (i=0;i<index;i++)
+				{
+					PRINTF(" %i", results [i]);
+				}
+			}
+
+
+
 			leds_on(dados[1]);
 
 			buf[0]=LED_STATE;
 			buf[1]=leds_get();
-			PRINTF("\n0x%02Xx%02X", buf[0], buf[1]);
+			//PRINTF("\n0x%02Xx%02X", buf[0], buf[1]);
+
+
+			rssi = (int16_t)packetbuf_attr(PACKETBUF_ATTR_RSSI);
+			lqi = (int16_t) packetbuf_attr(PACKETBUF_ATTR_LINK_QUALITY);
+			buf[2]=0;
+			buf[3]=0;
+			buf[4]=0;
+			buf[5]=0;
+
+			buf[3]=(uint8_t)(rssi & 0xff);
+			buf[2]=(uint8_t)(rssi >> 8);
+			PRINTF("\n LED SET STATE");
+			PRINTF("\n0x%02Xx%02X", buf[2], buf[3]);
+			PRINTF("\n Signal Strength: %i", rssi);
+			buf[5]=(lqi & 0xff);
+			buf[4]=(lqi >> 8);
+			PRINTF("\n0x%02Xx%02X", buf[4], buf[5]);
+			PRINTF("\n Link Quality:  %i \n", lqi);
+
 			uip_ipaddr_copy (& g_conn -> ripaddr , & UIP_IP_BUF -> srcipaddr );
 			g_conn -> rport = UIP_UDP_BUF -> destport ;
-			uip_udp_packet_send(g_conn, buf, 2);
+			uip_udp_packet_send(g_conn, buf, 6);
 
 			break;
 		}
@@ -137,27 +186,25 @@ static void tcpip_handler ( void )
 
 }
 /*---------------------------------------------------------------------------*/
+
 static void
 timeout_handler(void)
-{  
-  memset(buf, 0, MAX_PAYLOAD_LEN); //zera o buffer global
-
-  if (uip_ds6_get_global(ADDR_PREFERRED)==NULL)
-  {
-	  PRINTF("O No ainda nao tem um IP global Valido\n");
-  }
-  else
-  {
-	  PRINTF("\n Cliente para [");
-	  PRINT6ADDR(&g_conn->ripaddr);
-	  PRINTF("]:%u,", UIP_HTONS(g_conn->rport));
-	  memset(buf, LED_TOGGLE_REQUEST, MAX_PAYLOAD_LEN);
-	  uip_udp_packet_send(g_conn, buf, 1);
-  }
-
-  
-
+{
+	if (uip_ds6_get_global(ADDR_PREFERRED)==NULL)
+	{
+		PRINTF("O No ainda nao tem um IP global Valido\n");
+	}
+	else
+	{
+		cc2530_rf_power_set(power);
+		PRINTF("\n Cliente para [");
+		PRINT6ADDR(&g_conn->ripaddr);
+		PRINTF("]:%u,", UIP_HTONS(g_conn->rport));
+		memset(buf, LED_TOGGLE_REQUEST, MAX_PAYLOAD_LEN);
+		uip_udp_packet_send(g_conn, buf, 1);
+	}
 }
+
 /*---------------------------------------------------------------------------*/
 
 static void
@@ -165,7 +212,7 @@ print_local_addresses(void)
 {
   int i;
   uint8_t state;
-  PRINTF("\nNodes's IPv6 addresses:\n");
+  PRINTF("Nodes's IPv6 addresses:\n");
   for(i = 0; i < UIP_DS6_ADDR_NB; i++) {
     state = uip_ds6_if.addr_list[i].state;
     if(uip_ds6_if.addr_list[i].isused && (state == ADDR_TENTATIVE || state == ADDR_PREFERRED)) {
@@ -186,10 +233,7 @@ PROCESS_THREAD(udp_client_process, ev, data)
   PROCESS_BEGIN();
   PRINTF("UDP client process started\n");
 
-  //uip_ip6addr(&ipaddr, 0xaaaa, 0, 0, 0, 0x0212, 0x4b00, 0x07b9, 0x5ecc);
-  uip_ip6addr(&ipaddr, 0xaaaa, 0,0,0,0x212, 0x4b00,0x7c3 , 0xb5e4);
-  //uip_ip6addr(&ipaddr, 0xbbbb, 0,0,0,0xa00, 0x27ff,0xfe1e , 0xff44);
-
+  uip_ip6addr(&ipaddr, 0xaaaa, 0, 0, 0, 0x0212, 0x4b00, 0x04e9, 0x0479);
   /* new connection with remote host */
   l_conn = udp_new(&ipaddr, UIP_HTONS(LOCAL_CONN_PORT), NULL);
   if(!l_conn) {
@@ -202,12 +246,7 @@ PROCESS_THREAD(udp_client_process, ev, data)
   PRINTF(" local/remote port %u/%u\n",
          UIP_HTONS(l_conn->lport), UIP_HTONS(l_conn->rport));
 
-  //uip_ip6addr(&ipaddr, 0xbbbb, 0,0,0,0x45d1, 0x8c36,0x41ab , 0x112d);
-  //uip_ip6addr(&ipaddr, 0xbbbb, 0,0,0,0xa00, 0x27ff,0xfe1e , 0xff44);
-  uip_ip6addr(&ipaddr, 0xbbbb, 0,0,0,0xe1b5, 0x4bcd,0x3f68 , 0x8b8f);
-  //bbbb::a00:27ff:fe1e:ff44
-  //bbbb::e1b5:4bcd:3f68:8b8f
-
+  uip_ip6addr(&ipaddr, 0xaaaa, 0, 0, 0, 0x0212, 0x4b00, 0x04e9, 0x0479);
   g_conn = udp_new(&ipaddr, UIP_HTONS(GLOBAL_CONN_PORT), NULL);
   if(!g_conn) {
     PRINTF("udp_new g_conn error.\n");
@@ -225,12 +264,10 @@ PROCESS_THREAD(udp_client_process, ev, data)
 
   while(1) {
     PROCESS_WAIT_EVENT();
-    //print_local_addresses();
     if(etimer_expired(&et)) {
       timeout_handler();
       etimer_restart(&et);
     } else if(ev == tcpip_event) {
-    	printf("Um pacote udp  foi recebido \n");
       tcpip_handler();
     }
   }

@@ -204,7 +204,8 @@ PROCESS_THREAD(udp_client_process, ev, data)
 
   //uip_ip6addr(&ipaddr, 0xbbbb, 0,0,0,0x45d1, 0x8c36,0x41ab , 0x112d);
   //uip_ip6addr(&ipaddr, 0xbbbb, 0,0,0,0xa00, 0x27ff,0xfe1e , 0xff44);
-  uip_ip6addr(&ipaddr, 0xbbbb, 0,0,0,0xe1b5, 0x4bcd,0x3f68 , 0x8b8f);
+  uip_ip6addr(&ipaddr, 0xbbbb, 0,0,0,0x6409, 0x352d,0x301b , 0x26b6);
+  //bbbb::6409:352d:301b:26b6
   //bbbb::a00:27ff:fe1e:ff44
   //bbbb::e1b5:4bcd:3f68:8b8f
 
@@ -230,7 +231,7 @@ PROCESS_THREAD(udp_client_process, ev, data)
       timeout_handler();
       etimer_restart(&et);
     } else if(ev == tcpip_event) {
-    	printf("Um pacote udp  foi recebido \n");
+    	//printf("Um pacote udp  foi recebido \n");
       tcpip_handler();
     }
   }

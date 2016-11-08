@@ -22,7 +22,7 @@
 					<folderInfo id="cdt.managedbuild.toolchain.sdcc.exe.release.179105115.199385294" name="/" resourcePath="">
 						<toolChain id="cdt.managedbuild.toolchain.sdcc.exe.release.912438468" name="SDCC Tool Chain" superClass="cdt.managedbuild.toolchain.sdcc.exe.release">
 							<targetPlatform archList="all" binaryParser="org.eclipse.cdt.core.ELF" id="cdt.managedbuild.target.sdcc.platform.exe.release.2146530154" name="Release Platform" osList="solaris,linux,hpux,aix,qnx,win32" superClass="cdt.managedbuild.target.sdcc.platform.exe.release"/>
-							<builder buildPath="${workspace_loc:/contiki-sensinode/examples/cc2530dk}" id="cdt.managedbuild.target.sdcc.builder.exe.release.304579610" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Sdcc Make" superClass="cdt.managedbuild.target.sdcc.builder.exe.release">
+							<builder autoBuildTarget="" buildPath="${workspace_loc:/contiki-sensinode/examples/cc2530dk/sniffer}" cleanBuildTarget="" enableAutoBuild="false" enableCleanBuild="true" enabledIncrementalBuild="true" id="cdt.managedbuild.target.sdcc.builder.exe.release.304579610" incrementalBuildTarget="" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Sdcc Make" superClass="cdt.managedbuild.target.sdcc.builder.exe.release">
 								<outputEntries>
 									<entry flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="outputPath" name="examples/cc2530dk/border-router"/>
 								</outputEntries>
