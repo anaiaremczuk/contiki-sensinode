@@ -62,7 +62,8 @@
 #include "contiki.h"
 #include "contiki-conf.h"
 #include "dev/leds.h"
-
+#include "dev/bmp280-sensor.h"
+#include "dev/bmp280-sensor.c"
 #include "dev/button-sensor.h"
 #include "dev/adc-sensor.h"
 
@@ -100,6 +101,8 @@ PROCESS_THREAD(buttons_test_process, ev, data)
     if(sensor == &button_sensor) {
       PRINTF("Button Press - LED Yellow!\n");
       leds_toggle(LEDS_YELLOW);
+
+
     }
   }
 
@@ -117,6 +120,7 @@ PROCESS_THREAD(sensors_test_process, ev, data)
   static float sane = 0;
   static int dec;
   static float frac;
+  static int aux;
 
   PROCESS_BEGIN();
 
@@ -126,6 +130,9 @@ PROCESS_THREAD(sensors_test_process, ev, data)
 
   /* Set an etimer. We take sensor readings when it expires and reset it. */
   etimer_set(&et, CLOCK_SECOND * 2);
+
+  //configure(SENSORS_HW_INIT);
+  aux =  value(BMP_SENSOR_TYPE_TEMP);
 
   while(1) {
 
