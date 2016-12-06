@@ -48,11 +48,18 @@
 
 #ifndef AI_DEFAULT
 #define AI_DEFAULT (AI_ADDRCONFIG|AI_V4MAPPED)
-#endif
+#endifstruct pt pt;
+
 
 static uint8_t debug = FALSE;
 
 topic_map_t *topic_map = NULL;
+
+#define REQUEST_NUMBER (3)
+
+mqtt_sn_subscribe_request subreq[REQUEST_NUMBER];
+mqtt_sn_register_request regreq[REQUEST_NUMBER];
+
 
 /*MQTT_SN events*/
 process_event_t mqtt_sn_request_event;
@@ -805,7 +812,7 @@ static int
 manage_request(struct mqtt_sn_request *req, struct mqtt_sn_connection *mqc,
                const char* topic_name, uint8_t qos,clock_time_t time_out)
 {
-  PT_BEGIN(&(req->pt));
+  //PT_BEGIN(&(req->pt));
   list_add(mqc->requests,req);
   ctimer_set(&(req->t), time_out, request_timer_callback, req);
   req->state = MQTTSN_REQUEST_WAITING_ACK;
@@ -815,11 +822,11 @@ manage_request(struct mqtt_sn_request *req, struct mqtt_sn_connection *mqc,
   if (req->request_type == MQTTSN_SUBSCRIBE_REQUEST) {
     req->msg_id = mqtt_sn_send_subscribe(mqc, topic_name, qos);
   }
-  PT_YIELD(&(req->pt)); /* Wait until timer expired or response received */
+  //PT_YIELD(&(req->pt)); /* Wait until timer expired or response received */
   ctimer_stop(&(req->t));
-  process_post(PROCESS_BROADCAST,mqtt_sn_request_event,req);
-  list_remove(mqc->requests,req);
-  PT_END(&(req->pt));
+  //process_post(PROCESS_BROADCAST,mqtt_sn_request_event,req);
+  //list_remove(mqc->requests,req);
+  //PT_END(&(req->pt));
   return 1;
 }
 

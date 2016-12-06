@@ -40,7 +40,6 @@
 #include "ctimer.h"
 #include "list.h"
 
-
 #ifndef FALSE
 #define FALSE  (0)
 #endif
@@ -233,7 +232,7 @@ struct mqtt_sn_connection {
   uint8_t connection_retries;
   struct process *client_process;
   const struct mqtt_sn_callbacks *mc;
-  LIST_STRUCT(requests);
+  //LIST_STRUCT(requests);
 };
 
 struct mqttsn_topic {
@@ -258,7 +257,8 @@ uint16_t mqtt_sn_send_publish(/*struct mqtt_sn_connection *mqc,*/ uint16_t topic
 #endif
 #if 1
 uint16_t mqtt_sn_send_subscribe(/*struct mqtt_sn_connection *mqc,*/ const char* topic_name, uint8_t qos);
-uint16_t mqtt_sn_send_subscribe_topic_id(/*struct mqtt_sn_connection *mqc,*/ uint16_t topic_id, uint8_t qos);
+uint16_t mqtt_sn_send_subscribe_topic_id(/*struct mqtt_sn_cstruct pt pt;
+  onnection *mqc,*/ uint16_t topic_id, uint8_t qos);
 #endif
 #if 1
 void mqtt_sn_send_pingreq(/*struct mqtt_sn_connection *mqc,*/);
@@ -320,31 +320,43 @@ enum mqtt_sn_request_type
   MQTTSN_UNSUBSCRIBE_REQUEST
 };
 
-struct mqtt_sn_request
+typedef struct mqtt_sn_request
 {
-  struct mqtt_sn_request *next;
+  //struct mqtt_sn_request *next;
   enum mqtt_sn_request_state state;
   enum mqtt_sn_request_type request_type;
   uint16_t msg_id;
   uint16_t topic_id;
   uint8_t return_code;
-  struct pt pt;
-  struct ctimer t;
-};
+  uint8_t used;
+  //struct pt pt;
+  //struct ctimer t;
+} mqtt_sn_request;
 
-typedef struct mqtt_sn_request mqtt_sn_register_request;
-typedef struct mqtt_sn_request mqtt_sn_subscribe_request;
+//typedef struct mqtt_sn_request mqtt_sn_register_request;
+//typedef struct mqtt_sn_request mqtt_sn_subscribe_request;
 //typedef struct mqtt_sn_request mqtt_sn_unsubscribe_request;
 
 //uint16_t mqtt_sn_request_try(/*struct mqtt_sn_connection *mqc,*/struct mqtt_sn_request *req, void (*message_function)(void *msg_fct), const char* topic_name,uint8_t time_out, uint8_t retries);
-int mqtt_sn_request_returned(struct mqtt_sn_request *req);
-int mqtt_sn_request_success(struct mqtt_sn_request *req);
+int mqtt_sn_request_returned(int8_t req_idx);
+int mqtt_sn_request_success(int8_t req_idx);
 
-uint16_t mqtt_sn_register_try(/*mqtt_sn_register_request *req, struct mqtt_sn_connection *mqc,*/ const char* topic_name,clock_time_t time_out);
+void init_request();
 
-uint16_t mqtt_sn_subscribe_try(/*mqtt_sn_subscribe_request *req, struct mqtt_sn_connection *mqc,*/ const char* topic_name, uint8_t qos, clock_time_t time_out);
+#define REGISTER_IDX (0)
+#define SUBSCRIBE_IDX (0)
+
+uint16_t mqtt_sn_register_try(const char* topic_name,clock_time_t time_out);
+//uint16_t mqtt_sn_register_try(/*mqtt_sn_register_request *req, struct mqtt_sn_connection *mqc,*/ const char* topic_name,clock_time_t time_out);
+
+//uint16_t mqtt_sn_subscribe_try(/*mqtt_sn_subscribe_request *req, struct mqtt_sn_connection *mqc,*/ const char* topic_name, uint8_t qos, clock_time_t time_out);
+
+uint16_t mqtt_sn_subscribe_try(const char* topic_name, uint8_t qos, clock_time_t time_out);
+
 
 //uint16_t mqtt_sn_unsubscribe_try(mqtt_sn_usubscribe_request *req; /*struct mqtt_sn_connection *mqc,*/ const char* topic_name,uint8_t time_out, uint8_t retries);
+
+inline int8_t get_request();
 
 #endif // 1
 
