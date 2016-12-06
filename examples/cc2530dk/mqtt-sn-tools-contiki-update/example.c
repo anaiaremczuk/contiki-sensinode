@@ -27,10 +27,12 @@
 
 
 
+#include <stdlib.h>
 #include <string.h>
 #include "dev/leds.h"
 #include "dev/button-sensor.h"
 #include "debug.h"
+
 
 #define DEBUG DEBUG_PRINT
 
@@ -49,6 +51,12 @@
 #include "net/rime.h"
 
 //#include "simple-udp.h"
+
+#include "dev/button-sensor.h"
+#include "dev/bmp280-sensor.h"
+#include "dev/bmp280-sensor.c"
+
+
 #include "net/uip-debug.h"
 
 #include <stdio.h>
@@ -60,14 +68,19 @@
 #define DEFAULT_SEND_INTERVAL		(10 * CLOCK_SECOND)
 #define REPLY_TIMEOUT (3 * CLOCK_SECOND)
 
+#define BMP_SENSOR_TYPE_TEMP 0
+
 extern mqtt_sn_request* requests;
 
 struct mqtt_sn_connection mqtt_sn_c;
 struct uip_udp_conn *g_conn;
 
+static uint16_t TEMP_C=0;
 static char mqtt_client_id[]="sensor";
 static char ctrl_topic[] = "0000000000000000/ctrl";//of form "0011223344556677/ctrl" it is null terminated, and is 21 charactes
 static char pub_topic[] = "0000000000000000/msg";
+static char temp_topic[] = "0000000000000000/temp";
+static char leds_topic[] = "0000000000000000/leds";
 static uint16_t ctrl_topic_id=0xaa;
 static uint16_t publisher_topic_id;
 static publish_packet_t incoming_packet;
@@ -149,6 +162,9 @@ publish_receiver(/*struct mqtt_sn_connection *mqc,*/ const uip_ipaddr_t *source_
 {
   memcpy(&incoming_packet, data, datalen);
   printf("Published message received -> ");
+  leds_off(LEDS_ALL);
+  leds_on(atoi(incoming_packet.data));
+
   //see if this message corresponds to ctrl channel subscription request
   if (uip_htons(incoming_packet.topic_id) == ctrl_topic_id) {
     //the new message interval will be read from the first byte of the recieved packet
@@ -186,14 +202,14 @@ PROCESS_THREAD(publish_process, ev, data)
 
   PROCESS_BEGIN();
   send_interval = DEFAULT_SEND_INTERVAL;
-  memcpy(pub_topic,device_id,16);
+  memcpy(temp_topic,device_id,16);
   printf("registering topic\n");
   registration_tries =0;
   while (registration_tries < REQUEST_RETRIES)
   {
 	stack_max_sp_print("register try - 0x");
 	stack_dump("current SP: 0x");
-    reg_topic_msg_id = mqtt_sn_register_try(pub_topic,REPLY_TIMEOUT);
+    reg_topic_msg_id = mqtt_sn_register_try(temp_topic,REPLY_TIMEOUT);
     PROCESS_WAIT_EVENT_UNTIL(mqtt_sn_request_returned(REGISTER_IDX));
     if (mqtt_sn_request_success(REGISTER_IDX)) {
       registration_tries = 4;
@@ -218,9 +234,10 @@ PROCESS_THREAD(publish_process, ev, data)
 		  PROCESS_WAIT_EVENT();
 
 		  if(ev == PROCESS_EVENT_TIMER) {
-
-			  sprintf(buf, "Message %d", message_number);
-			  printf("publishing '%s' to topic '%s' \n ", buf, pub_topic);
+			  TEMP_C = value(BMP_SENSOR_TYPE_TEMP);
+			  //sprintf(buf, "Message %d", message_number);
+			  sprintf(buf, "Temperature: %f",TEMP_C*0.01);
+			  printf("publishing '%s' to topic '%s' \n ", buf, temp_topic);
 			  message_number++;
 			  buf_len = strlen(buf);
 			  stack_max_sp_print("send publish - 0x");
@@ -246,12 +263,12 @@ PROCESS_THREAD(ctrl_subscription_process, ev, data)
   PROCESS_BEGIN();
 
   subscription_tries = 0;
-  memcpy(ctrl_topic,device_id,16);
+  memcpy(leds_topic,device_id,16);
   printf("requesting subscription\n");
   while(subscription_tries < REQUEST_RETRIES) {
 	stack_max_sp_print("subslcribe try - 0x");
 	stack_dump("current SP: 0x");
-    ctrl_topic_msg_id = mqtt_sn_subscribe_try(ctrl_topic,0,REPLY_TIMEOUT);
+    ctrl_topic_msg_id = mqtt_sn_subscribe_try(leds_topic,0,REPLY_TIMEOUT);
     PROCESS_WAIT_EVENT_UNTIL(mqtt_sn_request_returned(SUBSCRIBE_IDX));
     if (mqtt_sn_request_success(SUBSCRIBE_IDX)) {
       subscription_tries = 4;
@@ -302,7 +319,8 @@ PROCESS_THREAD(example_mqttsn_process, ev, data)
   //uip_ip6addr(&broker_addr, 0x2001, 0x0db8, 1, 0xffff, 0, 0, 0xc0a8, 0xd480);//192.168.212.128 with tayga
   //uip_ip6addr(&broker_addr, 0xaaaa, 0, 2, 0xeeee, 0, 0, 0xc0a8, 0xd480);//192.168.212.128 with tayga
   //uip_ip6addr(&broker_addr, 0xaaaa, 0, 2, 0xeeee, 0, 0, 0xac10, 0xdc01);//172.16.220.1 with tayga
-  uip_ip6addr(&broker_addr, 0xbbbb, 0, 0, 0, 0xa914, 0x34d8, 0xb169, 0x6ae9);//172.16.220.128 with tayga
+  uip_ip6addr(&broker_addr,  0xbbbb, 0, 0, 0, 0xb1dc, 0x2b2e, 0x905a, 0x9042);//172.16.220.128 with tayga
+
   //mqtt_sn_create_socket(&mqtt_sn_c,UDP_PORT, &broker_addr, UDP_PORT);
 
   //simple_udp_register(&(mqc->sock), local_port, remote_addr, remote_port, mqtt_sn_receiver);
